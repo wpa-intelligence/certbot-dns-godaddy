@@ -3,7 +3,7 @@ name = "certbot-dns-godaddy"
 version = "2.8.0"
 description = "A certbot plugin that implements letsencrypt dns wildcard support for godaddy using lexicon"
 authors = [
-    "Dustyn Gibson <miigotu@gmail.com>"
+    "Dustyn Gibson <miigotu@gmail.com>",
     "pythoninthegrass <4097471+pythoninthegrass@users.noreply.github.com>"
 ]
 license = "Apache-2.0"
