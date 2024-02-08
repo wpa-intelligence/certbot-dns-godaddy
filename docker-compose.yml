@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  certbot:
+    image: ${REGISTRY}/${USER_NAME}/${SERVICE}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    cap_drop:
+      - all
+    volumes:
+      - ./certs:/var/lib/letsencrypt
+      - ./config:/etc/letsencrypt
+      - ./credentials.ini:/var/lib/letsencrypt/godaddy_credentials.ini
+    working_dir: /etc/letsencrypt
+    env_file:
+      - .env
+    environment:
+      - AUTH=${AUTH:-"dns-godaddy"}
+      - PROP=${PROP:-900}
+      - TTL=${TTL:-600}
+      - EMAIL=$(EMAIL:-"webmaster@example.com")
+      - DOMAIN=$(DOMAIN:-"example.com")
+      - WILDCARD=$(WILDCARD:-"*.example.com")
+    command: >
+      certbot certonly
+        --authenticator $AUTH
+        --dns-godaddy-propagation-seconds $PROP
+        --dns-godaddy-ttl $TTL
+        --dns-godaddy-credentials /var/lib/letsencrypt/godaddy_credentials.ini
+        --keep-until-expiring --non-interactive --expand
+        --server https://acme-v02.api.letsencrypt.org/directory
+        --agree-tos --email $EMAIL
+        -d $DOMAIN
+        -d $WILDCARD

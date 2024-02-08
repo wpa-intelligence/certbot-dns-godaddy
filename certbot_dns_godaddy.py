@@ -1,12 +1,14 @@
+#!/usr/bin/env python
+
 """
-This module defines a certbot plugin to automate the process of completing a
-``dns-01`` challenge (`~acme.challenges.DNS01`) by creating, and subsequently
+This module defines a certbot plugin to automate
+the process of completing a ``dns-01`` challenge
+(`~acme.challenges.DNS01`) by creating, and subsequently
 removing, TXT records using the godaddy CCP API.
 """
 
 import logging
 from typing import Any, Callable
-
 from certbot.plugins import dns_common_lexicon
 
 logger = logging.getLogger(__name__)
@@ -22,7 +24,6 @@ class Authenticator(dns_common_lexicon.LexiconDNSAuthenticator):
                    'using GoDaddy for DNS).')
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        
         params_dict = args[0].to_dict()
         self.ttl = str(params_dict.get("dns_godaddy_ttl", 600))
         super().__init__(*args, **kwargs)
@@ -38,15 +39,15 @@ class Authenticator(dns_common_lexicon.LexiconDNSAuthenticator):
                              default_propagation_seconds: int = 30) -> None:
         super().add_parser_arguments(add, default_propagation_seconds)
         add('credentials', help='GoDaddy credentials INI file.')
-    
+
     def more_info(self) -> str:
         return ('This plugin configures a DNS TXT record to respond to a '
                 'dns-01 challenge using the godaddy API.')
-    
+
     @property
     def _provider_name(self) -> str:
         return 'godaddy'
-    
+
     @property
     def _ttl(self) -> int:
         """

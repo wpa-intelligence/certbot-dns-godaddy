@@ -1,0 +1,113 @@
+version: "3.0"
+
+set: ['e', 'u', 'pipefail']
+shopt: ['globstar']
+
+dotenv: ['.env']
+
+env:
+  TLD:
+    sh: "echo {{.TASKFILE_DIR}}"            # absolute path
+    # sh: "basename ${{.TASKFILE_DIR}}"     # directory name
+  BUILD: ./bin/build.sh
+  INSTALL: ./bin/install.sh
+  COMPOSE_FILE:
+    sh: "echo ${COMPOSE_FILE:-docker-compose.yml}"
+  PLATFORM:
+    sh: "echo ${PLATFORM:-linux/amd64}"
+  REGISTRY_URL:
+    sh: "echo ${REGISTRY_URL:-docker.io}"
+  SERVICE: bonfire-client
+  USER_NAME:
+    sh: "echo ${USER_NAME:-wpaintel}"
+  UNAME:
+    sh: "uname -s"
+
+vars:
+
+tasks:
+  print:
+    - |
+      echo -e "TLD:\t\t$TLD"
+      echo -e "COMPOSE_FILE:\t{{.COMPOSE_FILE}}"
+      echo -e "PLATFORM:\t{{.PLATFORM}}"
+      echo -e "REGISTRY_URL:\t$REGISTRY_URL"
+      echo -e "SERVICE:\t{{.SERVICE}}"
+      echo -e "USER_NAME:\t$USER_NAME"
+      echo -e "UNAME:\t\t$UNAME"
+
+  default:
+    desc: "Default task"
+    cmds:
+      - task --list
+
+  install:
+    desc: "Install project dependencies"
+    cmds:
+      - |
+        {{.INSTALL}} {{.CLI_ARGS}}
+
+  net:
+    desc: "Create docker network"
+    cmds:
+      - |
+        docker network create \
+        --driver bridge \
+        app-tier
+
+  vol:
+    desc: "Create docker volume"
+    cmds:
+      - |
+        docker volume create \
+        --driver local \
+        app-data
+
+  build:
+    desc: "Build the docker image"
+    cmds:
+      - |
+        {{.BUILD}} client
+
+  push:
+    desc: "Push the docker image to the registry"
+    deps:
+      - build
+    cmds:
+      - docker push {{.REGISTRY_URL}}/{{.USER_NAME}}/{{.SERVICE}}
+
+  up:
+    desc: "Start the project with docker compose"
+    cmds:
+      - |
+        docker compose -f {{.COMPOSE_FILE}} up -d \
+        --build \
+        --remove-orphans
+
+  exec:
+    desc: "Shell into a running container"
+    cmds:
+      - docker exec -it {{.SERVICE}} sh
+
+  logs:
+    desc: "Follow the logs of a running container"
+    cmds:
+      - docker compose logs -tf {{.SERVICE}}
+
+  stop:
+    desc: "Stop the project with docker compose"
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} stop
+
+  down:
+    desc: "Stop and remove containers, networks, and volumes with docker compose"
+    cmds:
+      - |
+        docker compose -f {{.COMPOSE_FILE}} down \
+        --volumes
+
+  prune:
+    desc: "Prune docker"
+    cmds:
+      - docker system prune --all --force
+      - docker builder prune --all --force
