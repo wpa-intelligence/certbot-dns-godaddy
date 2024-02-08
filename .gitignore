@@ -3,6 +3,7 @@
 .vscode
 *.ini
 work
+!**/.gitkeep
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
