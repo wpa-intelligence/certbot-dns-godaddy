@@ -17,7 +17,8 @@ env:
     sh: "echo ${PLATFORM:-linux/amd64}"
   REGISTRY_URL:
     sh: "echo ${REGISTRY_URL:-docker.io}"
-  SERVICE: bonfire-client
+  SERVICE:
+    sh: "echo ${SERVICE:-certbot-dns-godaddy}"
   USER_NAME:
     sh: "echo ${USER_NAME:-wpaintel}"
   UNAME:

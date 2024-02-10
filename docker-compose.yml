@@ -3,33 +3,48 @@ version: '3'
 services:
   certbot:
     image: ${REGISTRY}/${USER_NAME}/${SERVICE}
+    container_name: ${SERVICE}
     build:
       context: .
       dockerfile: Dockerfile
     cap_drop:
       - all
     volumes:
+      - .:/app
       - ./certs:/var/lib/letsencrypt
       - ./config:/etc/letsencrypt
-      - ./credentials.ini:/var/lib/letsencrypt/godaddy_credentials.ini
     working_dir: /etc/letsencrypt
     env_file:
       - .env
     environment:
+      - ACME_DEV_URL="https://acme-staging-v02.api.letsencrypt.org/directory"
+      - ACME_PROD_URL="https://acme-v02.api.letsencrypt.org/directory"
       - AUTH=${AUTH:-"dns-godaddy"}
       - PROP=${PROP:-900}
       - TTL=${TTL:-600}
-      - EMAIL=$(EMAIL:-"webmaster@example.com")
-      - DOMAIN=$(DOMAIN:-"example.com")
-      - WILDCARD=$(WILDCARD:-"*.example.com")
-    command: >
-      certbot certonly
-        --authenticator $AUTH
-        --dns-godaddy-propagation-seconds $PROP
-        --dns-godaddy-ttl $TTL
-        --dns-godaddy-credentials /var/lib/letsencrypt/godaddy_credentials.ini
-        --keep-until-expiring --non-interactive --expand
-        --server https://acme-v02.api.letsencrypt.org/directory
-        --agree-tos --email $EMAIL
-        -d $DOMAIN
-        -d $WILDCARD
+      - EMAIL=${EMAIL:-"webmaster@example.com"}
+      - DOMAIN=${DOMAIN:-"example.com"}
+      - WILDCARD=${WILDCARD:-"*.example.com"}
+    # TODO:
+    # λ task exec
+    # task: [exec] docker exec -it certbot-dns-godaddy sh
+    # Error response from daemon: container e16911bdae44eb0a9ba35b1252226b6230342d65736de9fe623976e11499e82f is not running
+    # task: Failed to run task "exec": exit status 1
+
+    # λ task logs
+    # task: [logs] docker compose logs -tf certbot-dns-godaddy
+    # no such service: certbot-dns-godaddy
+    # task: Failed to run task "logs": exit status 1
+    command: ["sleep", "infinity"]
+    # command: >
+    #   certbot certonly -v \
+    #     --authenticator ${AUTH} \
+    #     --dns-godaddy-credentials /app/credentials.ini \
+    #     --dns-godaddy-propagation-seconds ${PROP} \
+    #     --keep-until-expiring \
+    #     --non-interactive \
+    #     --expand \
+    #     --server ${ACME_DEV_URL} \
+    #     --agree-tos --email ${EMAIL} \
+    #     -d ${DOMAIN} \
+    #     -d ${WILDCARD}

@@ -12,7 +12,7 @@ ENV PIP_DEFAULT_TIMEOUT=100
 
 # poetry env vars
 ENV POETRY_HOME="/opt/poetry"
-ENV POETRY_VERSION=1.6.1
+ENV POETRY_VERSION=1.7.1
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 ENV POETRY_NO_INTERACTION=1
 
@@ -20,20 +20,24 @@ ENV POETRY_NO_INTERACTION=1
 ENV VENV="/opt/venv"
 ENV PATH="$POETRY_HOME/bin:$VENV/bin:$PATH"
 
+RUN apk add gcc libffi-dev musl-dev --no-cache
+
 WORKDIR /app
 
 COPY requirements.txt .
 COPY . .
 
 RUN python -m venv $VENV \
-    && . "${VENV}/bin/activate"\
-    && python -m pip install "poetry==${POETRY_VERSION}" \
-    && python -m pip install -r requirements.txt
+    && . "${VENV}/bin/activate" \
+    && python -m pip install --upgrade pip setuptools wheel \
+    && python -m pip install cffi --no-cache-dir \
+    && python -m pip install "poetry==${POETRY_VERSION}" --no-cache-dir \
+    && python -m pip install -r requirements.txt --no-cache-dir
 
 RUN pip install --no-cache-dir /app
 
 # full semver just for python base image
-ARG PYTHON_VERSION=3.11.6
+ARG PYTHON_VERSION=3.10.6
 
 FROM certbot/certbot:$VERSION as runner
 
@@ -60,15 +64,27 @@ ENV TZ=UTC
 RUN addgroup -g 1000 -S ${USER_GROUP} \
     && adduser -u 1000 -S ${USER_NAME} -G ${USER_GROUP} \
     && mkdir -p ${HOME} \
-    && chown -R ${USER_NAME}:${USER_GROUP} ${HOME}
+    && mkdir -p /etc/letsencrypt \
+    && mkdir -p /var/lib/letsencrypt \
+    && mkdir -p /var/log/letsencrypt \
+    && chown -R ${USER_NAME}:${USER_GROUP} ${HOME} \
+    && chown -R ${USER_NAME}:${USER_GROUP} /etc/letsencrypt \
+    && chown -R ${USER_NAME}:${USER_GROUP} /var/lib/letsencrypt \
+    && chown -R ${USER_NAME}:${USER_GROUP} /var/log/letsencrypt
 
-WORKDIR /app
-
-COPY --from=builder --chown=appuser:appuser /app /app
 COPY --from=builder --chown=${USER_NAME}:${USER_GROUP} $VENV $VENV
 
 ENV PATH=$VENV_PATH/bin:$HOME/.local/bin:$PATH
 
+WORKDIR /app
+
+# ! works but better to mount at runtime
+# COPY --chown=${USER_NAME}:${USER_GROUP} credentials.ini .
+# RUN chmod 600 credentials.ini
+
 USER ${USER_NAME}
 
-CMD ["sleep", "infinity"]
+ARG ACME_DEV_URL="https://acme-staging-v02.api.letsencrypt.org/directory"
+ARG ACME_PROD_URL="https://acme-v02.api.letsencrypt.org/directory"
+
+# RUN ["sleep", "infinity"]

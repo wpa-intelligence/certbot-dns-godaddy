@@ -1,9 +1,11 @@
 # ETC
+!**/.gitkeep
 .idea
 .vscode
 *.ini
+certs/
+config/
 work
-!**/.gitkeep
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

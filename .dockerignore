@@ -22,7 +22,6 @@
 **/bin
 **/charts
 **/compose*
-**/credentials.ini*
 **/csv
 **/docker-compose*
 **/Dockerfile*
